@@ -16,11 +16,40 @@ Do **not** interpret the base variable as an opacity or shade value.
 
 ---
 
+## 1a. Collection prefix — REQUIRED in Builder
+
+The RTC collection in Figma is named `RTC`. Figma variable paths are
+`CollectionName/VariableName`, so a valid binding path must include the
+collection prefix.
+
+**In Builder mode** (`fillVar`, `strokeVar`, `paintStyleVar`,
+`strokeStyleVar`), always emit:
+
+- `RTC/primary`
+- `RTC/primary-shades/primary-55`
+- `RTC/primary-shades-dark/primary-55`
+- `RTC/primary-alpha/primary-15`
+
+**In Manager mode**, the same variables are keyed WITHOUT the prefix:
+
+- `primary`
+- `primary-shades/primary-55`
+- `primary-shades-dark/primary-55`
+- `primary-alpha/primary-15`
+
+The prefix is a Builder-side binding requirement only. Manager JSON must
+not include it, or you will create a nested `RTC/RTC/...` hierarchy.
+
+**Rule:** every path shown anywhere else in this document is the *Manager-form*
+path. Builder must prepend `RTC/` before emitting it.
+
+---
+
 ## 2. Light Shade System
 
 `X-shades/X-N` — source color progressively blended toward **white**.
 
-- `X` = source color  
+- `X` = source color
 - `N` = shade level (5–100 in steps of 5)
 
 Example: `primary-shades/primary-55` = Primary blended toward white at level 55.
@@ -55,18 +84,18 @@ Alpha values: 5–100 in steps of 5.
 
 ## 5. Four states of the same source color
 
-| State | Path | Meaning |
-|-------|------|---------|
-| Base | `X` | Solid source |
-| Light shade | `X-shades/X-N` | Toward white |
-| Dark shade | `X-shades-dark/X-N` | Toward black |
-| Alpha | `X-alpha/X-N` | N% opacity |
+| State | Manager path | Builder binding path | Meaning |
+|-------|--------------|----------------------|---------|
+| Base | `X` | `RTC/X` | Solid source |
+| Light shade | `X-shades/X-N` | `RTC/X-shades/X-N` | Toward white |
+| Dark shade | `X-shades-dark/X-N` | `RTC/X-shades-dark/X-N` | Toward black |
+| Alpha | `X-alpha/X-N` | `RTC/X-alpha/X-N` | N% opacity |
 
 ---
 
 ## 6. Relationship to numbered color scales (e.g. 50–900)
 
-Many systems use scales like `50, 100, … 900` (Tailwind-style is one example).  
+Many systems use scales like `50, 100, … 900` (Tailwind-style is one example).
 Lower numbers ≈ lighter; middle (often `500`) ≈ base; higher ≈ darker.
 
 **Example** correspondence (not universal law):
@@ -129,11 +158,12 @@ The task may involve Tailwind, other token systems, existing Figma variables, HE
 
 Always:
 
-1. Identify the source color  
-2. Identify semantic role when available  
-3. Decide: base / light shade / dark shade / alpha  
-4. If from a numbered scale, use position → mapping (not raw number copy)  
-5. Preserve meaning; do not confuse shade % with scale numbers or shades with transparency  
+1. Identify the source color
+2. Identify semantic role when available
+3. Decide: base / light shade / dark shade / alpha
+4. If from a numbered scale, use position → mapping (not raw number copy)
+5. Preserve meaning; do not confuse shade % with scale numbers or shades with transparency
+6. Emit `RTC/<path>` if the target is Builder; emit `<path>` if the target is Manager
 
 ---
 
@@ -165,24 +195,36 @@ External systems are only translation examples.
 
 When mapping or generating:
 
-1. Source color  
-2. Semantic role (if any)  
-3. Base vs light vs dark vs alpha  
-4. Scale position → correct mapping  
-5. Preserve semantic relationship  
-6. Never confuse shade % with external scale numbers  
-7. Never confuse shades with alpha  
-8. Never treat example Tailwind assignments as universal  
+1. Source color
+2. Semantic role (if any)
+3. Base vs light vs dark vs alpha
+4. Scale position → correct mapping
+5. Preserve semantic relationship
+6. Never confuse shade % with external scale numbers
+7. Never confuse shades with alpha
+8. Never treat example Tailwind assignments as universal
+9. Builder bindings are always `RTC/<path>` — never bare
+
+---
+
+## 14. Mode-specific path form (quick reference)
+
+| Target | Where it's used | Path form | Example |
+|--------|-----------------|-----------|---------|
+| Manager | `variables` keys | bare | `primary-shades-dark/primary-85` |
+| Builder | `fillVar`, `strokeVar`, `paintStyleVar`, `strokeStyleVar` | prefixed | `RTC/primary-shades-dark/primary-85` |
+
+Do **not** prefix in Manager. Do **not** omit the prefix in Builder.
 
 ---
 
 ## Usage in this skill
 
-**Manager**  
-- When creating or documenting color variables, use this path structure.  
+**Manager**
+- When creating or documenting color variables, use this path structure **without** the `RTC/` prefix.
 - When binding styles to colors, prefer RTC paths over raw hex when the collection exists.
 
-**Builder**  
-- For `fillVar` / `strokeVar` / related bindings, prefer RTC paths when reference exports include them.  
-- If no RTC reference is provided, fall back to raw hex (or paintStyleVar paths the user supplied).  
+**Builder**
+- For `fillVar` / `strokeVar` / related bindings, prefer RTC paths **with** the `RTC/` prefix when reference exports include them.
+- If no RTC reference is provided, fall back to raw hex (or paintStyleVar paths the user supplied).
 - Never invent shade/alpha levels or semantic names that are not in the conversation or reference files.

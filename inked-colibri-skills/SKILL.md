@@ -19,10 +19,10 @@ Detect intent from the user request. Apply only the rules of the matching mode. 
 ## Mode detection
 
 **Manager** triggers on:
-- variables, styles, size scheme, typography, layout, binding, Token Commander style requests, “generate variables”, “create text styles”
+- variables, styles, size scheme, typography, layout, binding, Token Commander style requests, "generate variables", "create text styles"
 
 **Builder** triggers on:
-- component, header, button, card, nav, component set, cmp.json, “create a … component”, “build me a …”, structure for Process button
+- component, header, button, card, nav, component set, cmp.json, "create a … component", "build me a …", structure for Process button
 
 If ambiguous, prefer Manager for pure token requests and Builder for anything that should become Figma nodes.
 
@@ -76,6 +76,8 @@ When creating or binding colors, follow `references/rtc-color-system.md`:
 - Numbered external scales (e.g. 50–900) need an explicit mapping; do not copy the scale number into `N`
 - Do not invent semantic names or shade levels not present in the task or reference exports
 
+**Manager uses bare paths — no collection prefix.** The prefix rule applies to Builder only. See §1a in `references/rtc-color-system.md`.
+
 ## Manager anti-patterns
 
 - Nested objects
@@ -85,6 +87,7 @@ When creating or binding colors, follow `references/rtc-color-system.md`:
 - Mixing raw values into textStyles properties
 - Confusing shade paths with alpha paths
 - Copying external scale numbers (e.g. Tailwind 400) directly into RTC shade levels
+- Adding an `RTC/` prefix in Manager JSON (that creates a nested `RTC/RTC/...` hierarchy)
 
 ---
 
@@ -98,7 +101,7 @@ Generate valid `cmp.json` that the Component Builder can Process into real Figma
 2. Sizing values are only `"hug"` | `"fill"` | `"fixed"`. There is no `"auto"`.
 3. `x`, `y`, `width`, `height` are always **numbers**. Variable paths are forbidden on them.
 4. Variable binding for size works only via `minHeight` / `maxHeight` / `minWidth` / `maxWidth` (or use a literal number).
-5. Never invent `instanceOf` or `ref` unless the component is known to exist in the user’s file. Prefer building from primitives.
+5. Never invent `instanceOf` or `ref` unless the component is known to exist in the user's file. Prefer building from primitives.
 6. Text nodes: use either `textStyle` **or** individual font properties — never both. Do not put `fill` on a text node when using `textStyle`.
 7. Do not mix `layoutSizingHorizontal`/`layoutSizingVertical` with `primaryAxisSizingMode`/`counterAxisSizingMode` on the same node.
 8. Only use properties defined in the schema. Unknown properties are silently ignored.
@@ -108,13 +111,19 @@ Generate valid `cmp.json` that the Component Builder can Process into real Figma
 ## Binding policy (Builder)
 
 - Colors → `fillVar` / `paintStyleVar` / `strokeVar` / `strokeStyleVar`
-  - Prefer RTC paths from `references/rtc-color-system.md` when those variables exist in the file or reference export (`X`, `X-shades/X-N`, `X-shades-dark/X-N`, `X-alpha/X-N`)
-  - Never invent RTC paths; fall back to hex or supplied paintStyleVar paths if no match
+  - RTC paths MUST be prefixed with the collection name: `RTC/<path>`
+    - ✅ `RTC/secondary`
+    - ✅ `RTC/primary-shades-dark/primary-85`
+    - ✅ `RTC/accent-shades/accent-45`
+    - ❌ `secondary` (bare — will not bind)
+    - ❌ `primary-shades-dark/primary-85` (bare — will not bind)
+  - Never invent RTC paths; fall back to hex or a supplied `paintStyleVar`
+    path if no confident match exists
 - Padding (all sides) → `paddingVar` or per-side `paddingLeft` etc. as path strings
 - Gap → `spacingVar` or `itemSpacing` as path string
 - Corner radius → `cornerRadiusVar` or `cornerRadius` as path string
 - Text → `textStyle` path (then omit individual font props)
-- If no reference file is present for a category, use raw values (hex, numbers, font props).
+- If no reference file is present for a category, use raw values (hex, numbers, font props)
 
 ## Root shapes (Builder)
 
@@ -139,7 +148,7 @@ Generate valid `cmp.json` that the Component Builder can Process into real Figma
 | `layout` | "horizontal" \| "vertical" \| "grid" |
 | `layoutSizingHorizontal` / `Vertical` | "hug" \| "fill" \| "fixed" |
 | `primaryAxisAlignItems` / `counterAxisAlignItems` | min, center, max, space-between |
-| `paintStyleVar` / `fillVar` / `strokeVar` | path strings |
+| `paintStyleVar` / `fillVar` / `strokeVar` | path strings — RTC must be `RTC/<path>` |
 | `paddingVar` / `paddingLeft`… | path or number |
 | `spacingVar` / `itemSpacing` | path or number |
 | `cornerRadius` / `cornerRadiusVar` | path or number |
@@ -171,6 +180,7 @@ Before emitting JSON, verify:
 6. Every path used for binding exists in a supplied reference (or fall back to raw).
 7. fill-sized children only appear inside auto-layout parents.
 8. Output is pure JSON (no markdown fences unless the user asked for explanation + JSON).
+9. Every `fillVar` / `strokeVar` / `paintStyleVar` / `strokeStyleVar` that references the RTC collection starts with `RTC/`.
 
 ## Builder anti-patterns
 
@@ -180,6 +190,8 @@ Before emitting JSON, verify:
 - Inventing component names for `instanceOf`
 - Mixing bound and raw values on the same property
 - Guessing variable or style paths that were not provided
+- Emitting an RTC path without the `RTC/` collection prefix
+- Using `RTC/` in Manager mode (Manager uses bare paths only)
 
 ---
 
@@ -192,7 +204,14 @@ Before emitting JSON, verify:
 
 ## Relationship between modes
 
-Manager creates the variables and styles.  
-Builder creates components that can bind to those variables and styles.  
+Manager creates the variables and styles.
+Builder creates components that can bind to those variables and styles.
 
 When both are needed, generate Manager JSON first, then Builder JSON that references the paths just created (or the paths the user already has in their file).
+
+**Path form differs by mode:**
+
+| Mode | RTC path form | Example |
+|------|---------------|---------|
+| Manager | bare | `primary-shades-dark/primary-85` |
+| Builder | prefixed | `RTC/primary-shades-dark/primary-85` |

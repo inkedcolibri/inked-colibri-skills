@@ -18,14 +18,39 @@ This is a plain-Markdown skill (a `SKILL.md` file + reference docs) that teaches
 
 ---
 
-## How to install (any AI chat)
+## How to use in regular AI chats
 
-1. Open `inked-colibri-skills/SKILL.md` from this repo.
-2. Paste its full contents into your AI chat — as a system prompt if the tool supports one, otherwise as your first message.
-3. When your request needs a specific reference file (e.g. `rtc-color-system.md` for colors, `builder-schema.md` for components), paste that file's contents into the same conversation too.
-4. Ask for what you need — see commands below.
+This skill is plain Markdown — there's no package manager, no install script. "Using" it means giving the files to an AI chat so it can follow the rules.
 
-Some tools (Claude Skills, Custom GPTs, Grok Skills, Projects) let you upload the whole `inked-colibri-skills/` folder directly instead of pasting — use that if it's available, it works the same way.
+### Step by step (works everywhere — ChatGPT, DeepSeek, Claude, Gemini, Mistral, etc.)
+
+Some chats (DeepSeek, plain ChatGPT, most others) can't open a GitHub link or read a repo on their own — you have to paste the actual text in. This method works on every chat that accepts a long message:
+
+1. Open `inked-colibri-skills/SKILL.md` in this repo and copy its full contents.
+2. Paste it as your **first message** in a new chat (or into the system prompt / custom instructions field, if the tool has one).
+3. Depending on what you're asking for, also copy-paste the matching reference file into the same chat, right after `SKILL.md`:
+   - **Variables, text styles, size/type/layout schemes** → paste `references/core-rules.md` plus the relevant scheme file (`size-scheme.md`, `typography-scheme.md`, `layout-scheme.md`, or `layout-extended.md`)
+   - **Colors / APCA pairs** → paste `references/rtc-color-system.md`
+   - **Components (`cmp.json`)** → paste `references/builder-critical-rules.md`, `references/builder-schema.md`, `references/builder-supported.md`, and `references/builder-examples.md`
+   - **Components using RTC colors** → add `references/rtc-color-system.md` on top of the Builder files above
+4. Now type your actual request — see **Commands** below.
+
+**If the chat starts ignoring the rules** (long conversations drift), start a fresh chat and re-paste `SKILL.md` + the relevant reference file at the top — don't just scroll up and remind it.
+
+### Tools that support file/folder upload
+
+If your tool has a "Skills", "Knowledge", or "Project files" feature (Claude Skills or Projects, Custom GPTs, Gemini Gems, Cursor/Windsurf-style `@file` references), you can upload or attach the `inked-colibri-skills/` folder directly instead of copy-pasting. It works the same way — the AI just reads the files from there instead of from your message.
+
+### RTC path quick rule
+
+When colors are involved, one rule trips people up more than any other:
+
+| Mode | Path form | Example |
+|------|-----------|---------|
+| **Manager** (variables/styles) | bare — **no** `RTC/` | `primary-shades-dark/primary-85` |
+| **Builder** (`fillVar`, `strokeVar`, etc.) | prefixed — **must** include `RTC/` | `RTC/primary-shades-dark/primary-85` |
+
+Manager is *defining* the variable inside the `RTC` collection, so it doesn't repeat the collection name. Builder is *pointing to* that variable from a component, so it needs the collection name to resolve it — a bare path here fails silently (the color just doesn't apply, no error). See `references/rtc-color-system.md` §1a and §14 for the full explanation.
 
 ---
 

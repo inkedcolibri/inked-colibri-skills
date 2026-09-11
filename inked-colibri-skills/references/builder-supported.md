@@ -39,14 +39,19 @@ Use this to stay inside what the plugin can actually Process today. Prefer the *
 
 ### Fills, strokes, radius
 - `paintStyleVar` (paint style path → fill)
-- `fillVar` (color variable path)
+- `fillVar` (color variable path — **must be `RTC/<path>` for RTC colors**)
 - `fill` (hex fallback)
 - `strokeStyleVar` / `strokeVar` / `stroke` (hex)
 - `strokeWidth`
 - Per-side: `strokeTopWeight`, `strokeBottomWeight`, `strokeLeftWeight`, `strokeRightWeight`
 - `cornerRadius` (number or path) / `cornerRadiusVar`
 - `opacity` (node-level 0–1)
-- `fillOpacity` / `strokeOpacity` (supported in schema and newer pipeline paths; still treat as “prefer solid 1.0” if round-trip is critical)
+- `fillOpacity` / `strokeOpacity` (supported in schema and newer pipeline paths; still treat as "prefer solid 1.0" if round-trip is critical)
+
+**RTC note:** RTC color variables live in a collection named `RTC`. Builder
+binding properties (`fillVar`, `strokeVar`, `paintStyleVar`,
+`strokeStyleVar`) must include the collection prefix: `RTC/<path>`.
+Manager variable keys do not include it.
 
 ### Text
 - `textStyle` (or `styleVar`) — path to text style
@@ -96,16 +101,18 @@ Do **not** depend on these for generated JSON that must Process cleanly today:
 - Variable paths on `width` / `height` / `x` / `y`
 - `"auto"` as a sizing value (use `"hug"` / `"fill"` / `"fixed"`)
 - Nesting layout props inside a `layout` object
+- Bare RTC paths (missing the `RTC/` collection prefix) on Builder bindings
 
 ---
 
 ## Generation policy for this skill
 
 1. Prefer properties from **Safe to emit**.
-2. Use **Use carefully** only when the user’s request clearly needs them, and prefer simpler alternatives first.
+2. Use **Use carefully** only when the user's request clearly needs them, and prefer simpler alternatives first.
 3. Never emit properties from **Avoid** as the only way to achieve a design.
 4. Always follow the Critical Rules in `builder-critical-rules.md` — those prevent crashes regardless of fidelity gaps.
 5. When reference exports are missing, fall back to raw values (hex, numbers, font props) instead of guessing paths.
+6. For RTC colors in Builder mode, always emit `RTC/<path>` (collection-prefixed). In Manager mode, emit bare paths.
 
 ---
 
